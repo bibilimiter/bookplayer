@@ -1,6 +1,6 @@
 // BookPlayer のサービスワーカー：画面の部品と pdf.js をしまっておき、ネットがなくても開けるようにする
 // 画面の部品を直したときは、VERSION の数を上げる（新しいものに入れかわる）
-const VERSION = 'bp-v2';
+const VERSION = 'bp-v3';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-180.png',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'];
@@ -16,8 +16,10 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
   if (url.search.includes('src=') || url.pathname.endsWith('.zip')) return;
+  // 同じサイトのファイルは、ブラウザの一時置き場の古いものを使わず、毎回新しいかをたしかめる（直したものがすぐ届くように）
+  const req = url.origin === location.origin ? new Request(e.request, { cache: 'no-cache' }) : e.request;
   e.respondWith(
-    fetch(e.request).then((r) => {
+    fetch(req).then((r) => {
       if (r.ok) { const cp = r.clone(); caches.open(VERSION).then((c) => c.put(e.request, cp)); }
       return r;
     }).catch(() => caches.match(e.request, { ignoreSearch: true }))

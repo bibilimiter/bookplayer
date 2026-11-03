@@ -85,6 +85,7 @@ async function openZip(blob) {
 // ---------------- 本棚 ----------------
 async function showLibrary() {
   stopAll();
+  document.body.classList.remove('full');
   $('player').hidden = true; $('library').hidden = false;
   const books = (await dbAll()).sort((a, b) => (b.opened || b.added) - (a.opened || a.added));
   const box = $('books'); box.innerHTML = '';
@@ -172,6 +173,8 @@ async function openBook(id) {
   rec.opened = Date.now(); dbPut(rec);
   S.book = rec;
   $('library').hidden = true; $('player').hidden = false;
+  // 前に本文だけを大きくしていたら、そのまま（ブラウザの枠の全画面は、ボタンを押したときだけ）
+  document.body.classList.toggle('full', !!settings.full);
   $('bookTitle').textContent = rec.title + (rec.author ? '　' + rec.author : '');
   $('loading').hidden = false; $('pages').innerHTML = '';
   const t0 = Date.now();
@@ -382,7 +385,32 @@ function drawOverlays() {
 }
 
 // ---------------- 操作 ----------------
-function setPlayIcon() { $('btnPlay').textContent = audio.paused ? '▶' : '⏸'; }
+function setPlayIcon() { $('btnPlay').textContent = $('fullPlay').textContent = audio.paused ? '▶' : '⏸'; }
+
+// 本文だけを大きく出す（上と下の帯をかくす）。できる端末では、ブラウザの枠も消して画面いっぱいにする
+function setFull(on) {
+  document.body.classList.toggle('full', on);
+  const de = document.documentElement;
+  try {
+    if (on && !document.fullscreenElement && !document.webkitFullscreenElement) {
+      const r = de.requestFullscreen ? de.requestFullscreen() : (de.webkitRequestFullscreen ? de.webkitRequestFullscreen() : null);
+      if (r && r.catch) r.catch(() => { });
+    } else if (!on && (document.fullscreenElement || document.webkitFullscreenElement)) {
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    }
+  } catch (e) { }
+  // ページの大きさが変わるので出し直す（resize のしくみを使う）
+  setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+}
+$('btnFull').onclick = () => { settings.full = true; saveSettings(); setFull(true); };
+$('fullExit').onclick = () => { settings.full = false; saveSettings(); setFull(false); };
+$('fullPlay').onclick = togglePlay;
+// ブラウザの枠の全画面を、ほかの操作（Esc など）でやめたときは、帯ももどす
+const onFsChange = () => {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement && document.body.classList.contains('full')) { settings.full = false; saveSettings(); setFull(false); }
+};
+document.addEventListener('fullscreenchange', onFsChange);
+document.addEventListener('webkitfullscreenchange', onFsChange);
 function togglePlay() {
   if (!S.url) return;
   if (audio.paused) { audio.play(); if (S.browsing) update(true); } else audio.pause();
@@ -431,7 +459,7 @@ function loop() {
 
 // ページをタップ：その文から再生。左右にはらう：ページをめくる
 let down = null;
-$('stage').addEventListener('pointerdown', (e) => { if (e.target.closest('.nav')) return; down = { x: e.clientX, y: e.clientY, t: Date.now() }; });
+$('stage').addEventListener('pointerdown', (e) => { if (e.target.closest('.nav') || e.target.closest('#fullCtrl')) return; down = { x: e.clientX, y: e.clientY, t: Date.now() }; });
 $('stage').addEventListener('pointerup', (e) => {
   if (!down) return;
   const dx = e.clientX - down.x, dy = e.clientY - down.y; down = null;

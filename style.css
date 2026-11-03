@@ -50,6 +50,14 @@ body { overscroll-behavior: none; }
 #loading[hidden], #pageInfo:empty { display: none; }
 #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--sub); font-size: 16px; }
 
+/* 本文だけを大きく：上と下の帯をかくして、ページを画面いっぱいに */
+#fullCtrl { display: none; position: absolute; right: calc(8px + env(safe-area-inset-right)); top: calc(8px + env(safe-area-inset-top));
+  gap: 6px; opacity: .45; z-index: 5; }
+#fullCtrl:hover, #fullCtrl:active { opacity: .9; }
+#fullCtrl .btn { background: rgba(31,41,55,.8); color: #fff; border: 0; padding: 10px 12px; font-size: 16px; }
+.full #player > .bar, .full #panel { display: none; }
+.full #fullCtrl { display: flex; }
+.full #stage { background: #000; }
 #panel { background: var(--panel); border-top: 1px solid var(--line);
   padding: 8px calc(12px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left)); }
 #line { font-size: 15px; line-height: 1.5; min-height: 3em; max-height: 4.5em; overflow: hidden; }

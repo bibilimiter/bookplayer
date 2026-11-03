@@ -38,6 +38,7 @@
       <div id="bookTitle" class="booktitle"></div>
       <select id="trackSel" aria-label="章"></select>
     </div>
+    <button id="btnFull" class="btn icon" aria-label="本文だけを大きく">⛶</button>
     <button id="btnMenu" class="btn icon" aria-label="設定">⚙</button>
   </header>
 
@@ -47,6 +48,11 @@
     <button id="navNext" class="nav right" aria-label="前のページ">›</button>
     <div id="pageInfo"></div>
     <div id="loading" hidden>読みこんでいます…</div>
+    <!-- 本文だけを大きく出しているときの、小さなボタン（再生／一時停止と、もとにもどす） -->
+    <div id="fullCtrl">
+      <button id="fullPlay" class="btn" aria-label="再生">▶</button>
+      <button id="fullExit" class="btn" aria-label="もとにもどす">✕</button>
+    </div>
   </div>
 
   <div id="panel">
