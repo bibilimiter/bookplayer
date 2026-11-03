@@ -133,15 +133,22 @@ async function addBook(blob, fileName) {
 $('fileInput').addEventListener('change', async (ev) => {
   const f = ev.target.files[0]; ev.target.value = '';
   if (!f) return;
-  const hint = $('libHint'); hint.hidden = false; hint.textContent = '「' + f.name + '」を取りこんでいます…（大きい本は少しかかります）';
+  const hint = $('libHint'); hint.hidden = false;
+  // いま何をしているかと、何秒たったかを出す（止まっているのか、進んでいるのかがわかるように）
+  const t0 = Date.now(); let step = '';
+  const show = () => { hint.textContent = '「' + f.name + '」（' + Math.round(f.size / 1048576) + ' MB）を取りこんでいます：' + step + '（' + Math.round((Date.now() - t0) / 1000) + '秒）'; };
+  const tick = setInterval(show, 500);
   try {
     // 選んだファイルを、この端末の中にしまう（あとでファイルが動いても聞けるように、中身を写す）
+    step = 'ファイルを読んでいます'; show();
     const blob = new Blob([await f.arrayBuffer()], { type: 'application/zip' });
+    step = '端末の中にしまっています'; show();
     await addBook(blob, f.name.replace(/\.book\.zip$|\.zip$/i, ''));
     hint.textContent = '';
   } catch (e) {
-    alert('取りこめませんでした：' + e.message);
+    alert('取りこめませんでした：' + (e && e.message ? e.message : e));
   }
+  clearInterval(tick);
   showLibrary();
 });
 
@@ -167,14 +174,26 @@ async function openBook(id) {
   $('library').hidden = true; $('player').hidden = false;
   $('bookTitle').textContent = rec.title + (rec.author ? '　' + rec.author : '');
   $('loading').hidden = false; $('pages').innerHTML = '';
+  const t0 = Date.now();
+  const tick = setInterval(() => { $('loading').textContent = '読みこんでいます…（' + Math.round((Date.now() - t0) / 1000) + '秒）'; }, 500);
+  try { await openBookInner(rec, id); }
+  catch (e) { alert('開けませんでした：' + (e && e.message ? e.message : e)); showLibrary(); }
+  finally { clearInterval(tick); $('loading').textContent = '読みこんでいます…'; }
+}
+
+async function openBookInner(rec, id) {
   S.zip = await openZip(rec.zip);
   S.manifest = await S.zip.json('book.json');
   const sel = $('trackSel'); sel.innerHTML = '';
   S.manifest.tracks.forEach((t, i) => { const o = document.createElement('option'); o.value = i; o.textContent = t.title + (t.sync ? '' : '（対応データなし）'); sel.append(o); });
-  // PDF は丸ごと読む（pdf.js が使う）
+  // PDF は丸ごと読まずに、出すページに要る所だけをそのつど読む（大きい PDF でもすぐ開ける）
   pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
   const pdfBlob = await S.zip.blob(S.manifest.pdf, 'application/pdf');
-  S.pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await pdfBlob.arrayBuffer()) }).promise;
+  const range = new pdfjsLib.PDFDataRangeTransport(pdfBlob.size, null);
+  range.requestDataRange = (begin, end) => {
+    pdfBlob.slice(begin, end).arrayBuffer().then((b) => range.onDataRange(begin, new Uint8Array(b)));
+  };
+  S.pdf = await pdfjsLib.getDocument({ range, length: pdfBlob.size, disableAutoFetch: true, disableStream: true, rangeChunkSize: 262144 }).promise;
   $('loading').hidden = true;
   const st = loadJson('bp_pos_' + id, { track: 0, pos: 0 });
   await loadTrack(Math.min(st.track || 0, S.manifest.tracks.length - 1), st.pos || 0);
