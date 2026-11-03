@@ -214,6 +214,9 @@ async function loadTrack(i, pos) {
     for (const it of S.items) for (const r of it.rects || []) { if (r[4] - r[2] > r[3] - r[1]) v++; else h++; }
     S.vertical = v >= h;
     $('pages').style.direction = S.vertical ? 'rtl' : 'ltr';
+    // 右とじ（縦書き）の本は、位置のつまみも右から左へ進む（時間の表示も左に）
+    $('seek').style.direction = S.vertical ? 'rtl' : 'ltr';
+    document.querySelector('.seekrow').style.flexDirection = S.vertical ? 'row-reverse' : 'row';
   }
   S.url = URL.createObjectURL(await S.zip.blob(t.audio, 'audio/mpeg'));
   audio.src = S.url;
