@@ -217,6 +217,10 @@ async function loadTrack(i, pos) {
     // 右とじ（縦書き）の本は、位置のつまみも右から左へ進む（時間の表示も左に）
     $('seek').style.direction = S.vertical ? 'rtl' : 'ltr';
     document.querySelector('.seekrow').style.flexDirection = S.vertical ? 'row-reverse' : 'row';
+    // 下のボタンも左右を逆に（右に「前の文」「−15」、左に「＋30」「次の文」。矢印も向きを合わせる）
+    document.querySelector('.ctrl').style.flexDirection = S.vertical ? 'row-reverse' : 'row';
+    $('btnPrevS').textContent = S.vertical ? '⏭' : '⏮';
+    $('btnNextS').textContent = S.vertical ? '⏮' : '⏭';
   }
   S.url = URL.createObjectURL(await S.zip.blob(t.audio, 'audio/mpeg'));
   audio.src = S.url;
@@ -489,8 +493,8 @@ $('stage').addEventListener('pointerup', (e) => {
 document.addEventListener('keydown', (e) => {
   if ($('player').hidden || e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
   if (e.key === ' ') { e.preventDefault(); togglePlay(); }
-  else if (e.key === 'ArrowLeft') $('btnPrevS').click();
-  else if (e.key === 'ArrowRight') $('btnNextS').click();
+  else if (e.key === 'ArrowLeft') $(S.vertical ? 'btnNextS' : 'btnPrevS').click();
+  else if (e.key === 'ArrowRight') $(S.vertical ? 'btnPrevS' : 'btnNextS').click();
   else if (e.key === 'PageDown') movePage(1);
   else if (e.key === 'PageUp') movePage(-1);
 });

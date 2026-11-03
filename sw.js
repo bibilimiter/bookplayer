@@ -1,6 +1,6 @@
 // BookPlayer のサービスワーカー：画面の部品と pdf.js をしまっておき、ネットがなくても開けるようにする
 // 画面の部品を直したときは、VERSION の数を上げる（新しいものに入れかわる）
-const VERSION = 'bp-v4';
+const VERSION = 'bp-v5';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-180.png',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'];
